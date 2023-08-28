@@ -21,6 +21,11 @@
 .texto-entrada {
   a {
     color: $negro;
+    margin-top: 2rem;
+    display: block;
+    @include tablet {
+      margin-top: 0;
+    }
   }
   h4 {
     margin: 0;
