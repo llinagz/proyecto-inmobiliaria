@@ -1,0 +1,22 @@
+{
+  "name": "fjllinares/bienesraices",
+  "description": "Creando un proyecto con POO",
+  "type": "project",
+  "autoload": {
+    "psr-4": {
+      "Fjllinares\\Bienesraices\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Javi",
+      "email": "javierllinaresbarral@outlook.com"
+    }
+  ],
+  "require": {},
+  "autoload-dev": {
+    "psr-4": {
+      "App\\": "./classes"
+    }
+  }
+}
