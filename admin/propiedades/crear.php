@@ -1,13 +1,11 @@
 <?php
-  require '../../includes/funciones.php';
-  $auth = estaAutenticado();
+  require '../../includes/app.php';
 
-  if(!$auth){
-    header('Location: /');
-  }
+  use App\Propiedad;
+
+  estaAutenticado();
 
   //Base de datos
-  require '../../includes/config/database.php';
   $db = conectarDB();
 
   //Consultar para obtener los vendedores
@@ -28,6 +26,10 @@
   //Ejecuta el codigo después de que el usuario envie el formulario
   if($_SERVER['REQUEST_METHOD'] === 'POST'){
 
+    $propiedad = new Propiedad($_POST);
+
+    $propiedad -> guardar();
+
     // echo "<pre>";
     // var_dump($_POST);
     // echo "</pre>";
@@ -41,8 +43,8 @@
     $descripcion = mysqli_real_escape_string($db, $_POST['descripcion']);
     $habitaciones = mysqli_real_escape_string($db, $_POST['habitaciones']);
     $wc = mysqli_real_escape_string($db, $_POST['wc']);
-    $estacionamiento = mysqli_real_escape_string($db, $_POST['estacionamientos']);
-    $vendedores_id = mysqli_real_escape_string($db, $_POST['vendedor']);
+    $estacionamiento = mysqli_real_escape_string($db, $_POST['estacionamiento']);
+    $vendedores_id = mysqli_real_escape_string($db, $_POST['vendedores_id']);
     $creado = date('Y/m/d');
 
     //Asignar files a una variables
@@ -106,7 +108,7 @@
       move_uploaded_file($imagen['tmp_name'], $carpetaImagenes . $nombreImagen);
 
       //Insertar en la BBDD
-      $query = "INSERT INTO propiedades (titulo, precio, imagen, descripcion, habitaciones, wc, estacionamiento, creado, vendedores_id) VALUES ( '$titulo', '$precio', '$nombreImagen', '$descripcion', '$habitaciones', '$wc', '$estacionamiento', '$creado', '$vendedores_id' ) ";
+  
 
       //Mostrar la consulta
       echo $query;
@@ -161,13 +163,13 @@
             <label for="wc">Baños de la propiedad:</label>
             <input type="number" id="wc" name="wc" placeholder="Ejemplo: 3" min="1" max="9" value="<?php echo $wc; ?>">
 
-            <label for="estacionamientos">Estacionamientos:</label>
-            <input type="number" id="estacionamiento" name="estacionamientos" placeholder="Ejemplo: 3" min="1" max="9" value="<?php echo $estacionamiento; ?>">
+            <label for="estacionamiento">Estacionamientos:</label>
+            <input type="number" id="estacionamiento" name="estacionamiento" placeholder="Ejemplo: 3" min="1" max="9" value="<?php echo $estacionamiento; ?>">
         </fieldset>
 
         <fieldset>
             <legend>Vendedor</legend>
-            <select name="vendedor" id="">
+            <select name="vendedores_id" id="">
                 <option value="">Seleccione un vendedor: </option>
                 <?php while($vendedor = mysqli_fetch_assoc($resultado)): ?>
                   <option <?php echo $vendedores_id === $vendedor['id'] ? 'selected' : ''; ?> value="<?php echo $vendedor['id']; ?>"><?php echo $vendedor['nombre'] . " " . $vendedor['apellido']; ?></option>
