@@ -8,6 +8,9 @@ class Propiedad{
     protected static $db;
     protected static $columnasDB = ['id', 'titulo', 'precio', 'imagen', 'descripcion', 'habitaciones', 'wc', 'estacionamiento', 'creado', 'vendedores_id'];
 
+    //Erorres o validacion
+    protected static $errores = [];
+
     public $id;
     public $titulo;
     public $precio;
@@ -29,7 +32,7 @@ class Propiedad{
         $this->id = $args['id'] ?? '';
         $this->titulo = $args['titulo'] ?? '';
         $this->precio = $args['precio'] ?? '';
-        $this->imagen = $args['imagen'] ?? 'imagen.jpg';
+        $this->imagen = $args['imagen'] ?? '';
         $this->descripcion = $args['descripcion'] ?? '';
         $this->habitaciones = $args['habitaciones'] ?? '';
         $this->wc = $args['wc'] ?? '';
@@ -42,12 +45,18 @@ class Propiedad{
 
         //Sanitizar los datos
         $atributos = $this->sanitizarAtributos();
-        debuguear($atributos);
 
-        $query = "INSERT INTO propiedades (titulo, precio, imagen, descripcion, habitaciones, wc, estacionamiento, creado, vendedores_id) VALUES ( '$this->titulo', '$this->precio', '$this->imagen', '$this->descripcion', '$this->habitaciones', '$this->wc', '$this->estacionamiento', '$this->creado', '$this->vendedores_id' ) ";
+        //Con la funcion join convertimos a string un arreglo (array_keys($atributos)).
+        //El primer parametro es el separador, y el segundo el array que queremos convertir.
+        $columnas = join(', ',array_keys($atributos));
+        $filas = join("', '",array_values($atributos));
+        
+        //Consulta para insertar datos
+        $query = "INSERT INTO propiedades($columnas) VALUES ('$filas')";
 
         $resultado = self::$db->query($query);
-        debuguear($resultado);
+        
+        return $resultado;
     }
 
     //Identificar y unir los atributos de la BD
@@ -71,4 +80,52 @@ class Propiedad{
         return $sanitizado;
     }
 
+    //Subida de archivos
+    public function setImagen($imagen){
+        //Asignar al atributo de imagen el nombre de la imagen para tener la ref y guardarla en la BD
+        if($imagen){
+            $this->imagen = $imagen;
+        }
+    }
+
+    //Validacion
+    public static function getErrores(){
+        return self::$errores;
+    }
+
+    public function validar(){
+        if(!$this->titulo ){
+            self::$errores[] = "Debes añadir un título";
+        }
+      
+        if(!$this->precio ){
+        self::$errores[] = "El precio es obligatorio";
+        }
+    
+        if(strlen($this->descripcion) < 50 ){
+        self::$errores[] = "Debes añadir una descripcion y debe tener al menos 50 caracteres";
+        }
+    
+        if(!$this->habitaciones){
+        self::$errores[] = "El numero de habitaciones es obligatorio";
+        }
+    
+        if(!$this->wc){
+        self::$errores[] = "El numero de baños es obligatorio";
+        }
+    
+        if(!$this->estacionamiento){
+        self::$errores[] = "El numero de lugares de estacionamiento es obligatorio";
+        }
+    
+        if(!$this->vendedores_id){
+        self::$errores[] = "Elige un vendedor";
+        }
+    
+        if(!$this->imagen){
+        self::$errores[] = "La imagen es obligatoria";
+        }
+
+        return self::$errores;
+    }
 }
