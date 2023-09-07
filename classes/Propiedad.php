@@ -38,11 +38,20 @@ class Propiedad{
         $this->wc = $args['wc'] ?? '';
         $this->estacionamiento = $args['estacionamiento'] ?? '';
         $this->creado = date('Y/m/d');
-        $this->vendedores_id = $args['vendedores_id'] ?? '';
+        $this->vendedores_id = $args['vendedores_id'] ?? 1;
     }
 
     public function guardar(){
+        if($this->id){
+            //actualizar
+            $this->actualizar();
+        }else{
+            //creando un nuevo registro
+            return $this->crear();
+        }
+    }
 
+    public function crear(){
         //Sanitizar los datos
         $atributos = $this->sanitizarAtributos();
 
@@ -57,6 +66,40 @@ class Propiedad{
         $resultado = self::$db->query($query);
         
         return $resultado;
+    }
+
+    public function actualizar(){
+        //Sanitizar los datos
+        $atributos = $this->sanitizarAtributos();
+        $valores = [];
+        //Va al objeto en memoria y va uniendo atributos con valores.
+        foreach($atributos as $key => $value){
+            $valores[] = "{$key}='{$value}'";
+        }
+
+        $query = "UPDATE propiedades SET "; 
+        $query .= join(', ', $valores);
+        $query .= " WHERE id = '" . self::$db->escape_string($this->id) . "' ";
+        $query .= " LIMIT 1";
+
+        $resultado = self::$db->query($query);
+
+        if($resultado){
+            //Redireccionar al usuario
+            header('Location: /admin?resultado=2');
+        }
+    }
+
+    //Eliminar un registro
+    public function eliminar(){
+        $query = "DELETE FROM propiedades WHERE id = " . self::$db->escape_string($this->id) . " LIMIT 1";
+
+        $resultado = self::$db->query($query);
+        
+        if($resultado){
+            $this->borrarImagen();
+            header('Location: /admin?resultado=3');
+        }
     }
 
     //Identificar y unir los atributos de la BD
@@ -82,9 +125,23 @@ class Propiedad{
 
     //Subida de archivos
     public function setImagen($imagen){
+        //Elimina la imagen previa. Revisamos que exista y tenga un valor.
+        if(isset($this->id)){
+            $this->borrarImagen();
+        }
+
         //Asignar al atributo de imagen el nombre de la imagen para tener la ref y guardarla en la BD
         if($imagen){
             $this->imagen = $imagen;
+        }
+    }
+
+    //Elimina el archivo
+    public function borrarImagen(){
+        //Comprobar si existe el archivo
+        $existeArchivo = file_exists(CARPETA_IMAGENES . $this->imagen);
+        if($existeArchivo){
+            unlink(CARPETA_IMAGENES . $this->imagen);
         }
     }
 
@@ -127,5 +184,58 @@ class Propiedad{
         }
 
         return self::$errores;
+    }
+
+    //Lista todas las propiedades
+    public static function all(){
+        $query = "SELECT * FROM propiedades";
+        $resultado = self::consultarSQL($query);
+        return $resultado;
+    }
+
+    //Busca un registro por su id
+    public static function find($id){
+        $query = "SELECT * FROM propiedades WHERE id={$id}";
+        $resultado = self::consultarSQL($query);
+        return array_shift($resultado);
+    }
+
+    public static function consultarSQL($query){
+        //Consultar BD
+        $resultado = self::$db->query($query);
+        //Iterar los resultados
+        $array = [];
+        while($registro = $resultado -> fetch_assoc()){
+            $array[] = self::crearObjeto($registro);
+        }
+    
+        //Liberar la memoria
+        $resultado->free();
+
+        //Retornar los resultados
+        return $array;
+    }
+
+    protected static function crearObjeto($registro){
+        //Clase padre, una nueva propiedad
+        $objeto = new self;
+
+        foreach($registro as $key => $value){
+            if(property_exists($objeto, $key)){
+                $objeto->$key = $value;
+            }
+        }
+        return $objeto;
+    }
+
+    //Sincroniza el objeto en memoria con los cambios realizados por el usuario
+    public function sincronizar($args = []){
+        foreach($args as $key => $value){
+            //Revisa de un objeto que una propiedad/atributo exista
+            if(property_exists($this, $key) && !is_null($value)){
+                //Es una variable no una propiedad
+                $this->$key = $value;
+            }
+        }
     }
 }
